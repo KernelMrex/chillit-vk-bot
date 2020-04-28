@@ -2,10 +2,10 @@ build:
 	go build -v ./cmd/chillitvkbot/.
 
 run:
-	go run -v ./cmd/chillitvkbot/. && ./chillitvkbot
+	go run -v ./cmd/chillitvkbot/. -config_path=configs/config.yaml
 
 run_dev:
-	go build -v ./cmd/chillitvkbot/. && ./chillitvkbot
+	go run -v ./cmd/chillitvkbot/. -config_path=configs/config.yaml.devel
 
 test:
 	go test -v -race ./...

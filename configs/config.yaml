@@ -1,0 +1,4 @@
+vk_bot:
+  group_id: 0
+  confirmation_code: "<confirmation_code>"  
+  host: ":8904"
