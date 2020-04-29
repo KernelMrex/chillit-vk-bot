@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	actionNewMessage   = "new_message"
+	actionNewMessage   = "message_new"
 	actionConfirmation = "confirmation"
 )
 

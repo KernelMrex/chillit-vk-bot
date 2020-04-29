@@ -2,9 +2,13 @@ package main
 
 import (
 	"chillit-vk-bot/internal/app/config"
+	"chillit-vk-bot/internal/app/places"
 	"chillit-vk-bot/internal/app/vkbot"
 	"flag"
 	"log"
+	"time"
+
+	"google.golang.org/grpc"
 )
 
 var configPath string
@@ -21,9 +25,22 @@ func main() {
 		log.Fatalln("error loading configuration", err)
 	}
 
-	log.Println("Started!")
-	if err := vkbot.Start(configuration.VkBot); err != nil {
+	log.Printf("Connecting to places store service '%s'...\n", configuration.StoreService.URL)
+	conn, err := grpc.Dial(
+		configuration.StoreService.URL,
+		grpc.WithInsecure(),
+		grpc.WithBlock(),
+		grpc.WithTimeout(5*time.Second),
+	)
+	if err != nil {
+		log.Fatalf("could not connect to store service. %v\n", err)
+	}
+	defer conn.Close()
+	log.Println("Connected!")
+
+	log.Println("Starting...")
+	if err := vkbot.Start(configuration.VkBot, places.NewPlacesStoreClient(conn)); err != nil {
 		log.Println(err)
 	}
-	log.Println("Shutted down...")
+	log.Println("Shutted down")
 }
