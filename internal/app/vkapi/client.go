@@ -6,8 +6,6 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
-
-	"github.com/google/go-querystring/query"
 )
 
 const (
@@ -28,7 +26,7 @@ func NewClient(token string) *Client {
 	rand.Seed(time.Now().UnixNano())
 	return &Client{
 		httpClient: &http.Client{
-			Timeout: time.Millisecond * 500,
+			Timeout: time.Millisecond * 2000,
 		},
 		token: token,
 	}
@@ -38,9 +36,13 @@ func NewClient(token string) *Client {
 func (c *Client) SendMessage(m *Message) error {
 	m.RandomID = rand.Int63()
 
-	v, _ := query.Values(m)
+	methodParams, err := m.urlEncode()
+	if err != nil {
+		return fmt.Errorf("error while encoding method params: %v", err)
+	}
+
 	resp, err := c.httpClient.Get(
-		fmt.Sprintf("%s?%s&access_token=%s&v=%s", endpoint+methodMessageSend, v.Encode(), c.token, version),
+		fmt.Sprintf("%s?%s&access_token=%s&v=%s", endpoint+methodMessageSend, methodParams, c.token, version),
 	)
 	if err != nil {
 		return fmt.Errorf("error while executing request: %v", err)

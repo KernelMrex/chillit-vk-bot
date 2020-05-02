@@ -58,18 +58,75 @@ func (b *webhookBot) messageHandler() handlerFunc {
 			return
 		}
 
-		messageText, err := b.dialogs.GetText("greeting")
-		if err != nil {
-			b.logger.Errorf("could not load dialog: %s", err)
-			return
+		// Logging
+		b.logger.Infof("Got message '%s' from user id '%d'", messageAct.Message.Text, messageAct.Message.From)
+
+		// Handling default message
+		if messageAct.Message.Payload == "" {
+			messageText, err := b.dialogs.GetText("greeting")
+			if err != nil {
+				b.logger.Errorf("could not load dialog: %s", err)
+				return
+			}
+
+			kb := &vkapi.Keyboard{
+				OneTime: false,
+				Buttons: []*vkapi.KeyboardRow{
+					{
+						&vkapi.KeyboardButton{
+							Action: &vkapi.ButtonAction{
+								Type:  "text",
+								Label: "Город 1",
+							},
+							Color: "secondary",
+						},
+						&vkapi.KeyboardButton{
+							Action: &vkapi.ButtonAction{
+								Type:  "text",
+								Label: "Город 2",
+							},
+							Color: "secondary",
+						},
+					},
+					{
+						&vkapi.KeyboardButton{
+							Action: &vkapi.ButtonAction{
+								Type:  "text",
+								Label: "Город 3",
+							},
+							Color: "secondary",
+						},
+						&vkapi.KeyboardButton{
+							Action: &vkapi.ButtonAction{
+								Type:  "text",
+								Label: "Город 4",
+							},
+							Color: "secondary",
+						},
+					},
+					{
+						&vkapi.KeyboardButton{
+							Action: &vkapi.ButtonAction{
+								Type:    "text",
+								Label:   "Связаться со администратором",
+								Payload: "{\"button\": \"1\"}",
+							},
+							Color: "secondary",
+						},
+					},
+				},
+			}
+
+			if err := b.vkAPIClient.SendMessage(&vkapi.Message{
+				RecieverID: messageAct.Message.From,
+				Text:       messageText,
+				Keyboard:   kb,
+			}); err != nil {
+				b.logger.Errorf("Could not send message id '%d' reason: %v", messageAct.Message.From, err)
+			}
 		}
 
-		if err := b.vkAPIClient.SendMessage(&vkapi.Message{
-			RecieverID: messageAct.Message.From,
-			Text:       messageText,
-		}); err != nil {
-			b.logger.Errorf("Could not send message id '%d' reason: %v", messageAct.Message.From, err)
-		}
+		// TODO: payload handling
 
 		resp.Write([]byte("ok"))
 	}
