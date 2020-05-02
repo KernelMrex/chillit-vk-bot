@@ -6,7 +6,6 @@ import (
 	"chillit-vk-bot/internal/app/vkbot"
 	"flag"
 	"log"
-	"time"
 
 	"google.golang.org/grpc"
 )
@@ -29,8 +28,8 @@ func main() {
 	conn, err := grpc.Dial(
 		configuration.StoreService.URL,
 		grpc.WithInsecure(),
-		grpc.WithBlock(),
-		grpc.WithTimeout(5*time.Second),
+		// grpc.WithBlock(),
+		// grpc.WithTimeout(5*time.Second),
 	)
 	if err != nil {
 		log.Fatalf("could not connect to store service. %v\n", err)
