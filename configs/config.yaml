@@ -2,6 +2,8 @@ vk_bot:
   group_id: 0
   confirmation_code: "<confirmation_code>"  
   host: ":8904"
+  token: "<token>"
+  dialogs_path: "./configs/dialogs.json"
 
 store_service:
   url: "localhost:10050"
