@@ -5,6 +5,7 @@ import (
 	"chillit-vk-bot/internal/app/vkapi"
 	"chillit-vk-bot/internal/app/vkdialogs"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -61,73 +62,109 @@ func (b *webhookBot) messageHandler() handlerFunc {
 		// Logging
 		b.logger.Infof("Got message '%s' from user id '%d'", messageAct.Message.Text, messageAct.Message.From)
 
-		// Handling default message
-		if messageAct.Message.Payload == "" {
-			messageText, err := b.dialogs.GetText("greeting")
-			if err != nil {
-				b.logger.Errorf("could not load dialog: %s", err)
-				return
-			}
-
-			kb := &vkapi.Keyboard{
-				OneTime: false,
-				Buttons: []*vkapi.KeyboardRow{
-					{
-						&vkapi.KeyboardButton{
-							Action: &vkapi.ButtonAction{
-								Type:  "text",
-								Label: "Город 1",
-							},
-							Color: "secondary",
-						},
-						&vkapi.KeyboardButton{
-							Action: &vkapi.ButtonAction{
-								Type:  "text",
-								Label: "Город 2",
-							},
-							Color: "secondary",
-						},
-					},
-					{
-						&vkapi.KeyboardButton{
-							Action: &vkapi.ButtonAction{
-								Type:  "text",
-								Label: "Город 3",
-							},
-							Color: "secondary",
-						},
-						&vkapi.KeyboardButton{
-							Action: &vkapi.ButtonAction{
-								Type:  "text",
-								Label: "Город 4",
-							},
-							Color: "secondary",
-						},
-					},
-					{
-						&vkapi.KeyboardButton{
-							Action: &vkapi.ButtonAction{
-								Type:    "text",
-								Label:   "Связаться со администратором",
-								Payload: "{\"button\": \"1\"}",
-							},
-							Color: "secondary",
-						},
-					},
-				},
-			}
-
-			if err := b.vkAPIClient.SendMessage(&vkapi.Message{
-				RecieverID: messageAct.Message.From,
-				Text:       messageText,
-				Keyboard:   kb,
-			}); err != nil {
-				b.logger.Errorf("Could not send message id '%d' reason: %v", messageAct.Message.From, err)
-			}
+		if messageAct.Message.Payload != "" {
+			// Handle payload
+			b.messagePayloadHandler(messageAct.Message)(req, resp)
+		} else {
+			// Handle default message
+			b.messageOnlyTextHandler(messageAct.Message)(req, resp)
 		}
 
-		// TODO: payload handling
-
 		resp.Write([]byte("ok"))
+	}
+}
+
+func (b *webhookBot) messageOnlyTextHandler(mo *messageObject) handlerFunc {
+	return func(req *request, resp reponse) {
+		messageText, err := b.dialogs.GetText("greeting")
+		if err != nil {
+			b.logger.Errorf("could not load dialog: %s", err)
+			return
+		}
+
+		kb := &vkapi.Keyboard{
+			OneTime: false,
+			Buttons: []*vkapi.KeyboardRow{
+				{
+					&vkapi.KeyboardButton{
+						Action: &vkapi.ButtonAction{
+							Type:    "text",
+							Label:   "Казань",
+							Payload: "{\"button\": \"city\", \"object\": {\"title\": \"казань\", \"offset\": 0}}",
+						},
+						Color: "primary",
+					},
+				},
+				{
+					&vkapi.KeyboardButton{
+						Action: &vkapi.ButtonAction{
+							Type:    "text",
+							Label:   "Связаться со администратором",
+							Payload: "{\"button\": \"admin\"}",
+						},
+						Color: "secondary",
+					},
+				},
+			},
+		}
+
+		if err := b.vkAPIClient.SendMessage(&vkapi.Message{
+			RecieverID: mo.From,
+			Text:       messageText,
+			Keyboard:   kb,
+		}); err != nil {
+			b.logger.Errorf("Could not send message id '%d' reason: %v", mo.From, err)
+		}
+	}
+}
+
+func (b *webhookBot) messagePayloadHandler(mo *messageObject) handlerFunc {
+	return func(req *request, resp reponse) {
+		var pld payload
+		if err := pld.Parse(mo.Payload); err != nil {
+			b.logger.Errorf("could not handle message with payload: %v", err)
+			return
+		}
+
+		switch pld.Button {
+		case "city":
+			b.handleCityButton(mo, &pld)(req, resp)
+		case "admin":
+			b.handleAdminButton(mo, &pld)(req, resp)
+		}
+	}
+}
+
+func (b *webhookBot) handleCityButton(mo *messageObject, pld *payload) handlerFunc {
+	type cityButtonPayload struct {
+		Title string `json:"title"`
+	}
+
+	return func(req *request, resp reponse) {
+		var payload cityButtonPayload
+		if err := json.Unmarshal([]byte(pld.Object), &payload); err != nil {
+			b.logger.Errorf("could not unmarshal payload '%s'. error: %v", string(pld.Object), err)
+			return
+		}
+
+		if err := b.vkAPIClient.SendMessage(&vkapi.Message{
+			RecieverID: mo.From,
+			Text:       fmt.Sprintf("Вы выбрали город '%v'", payload.Title),
+		}); err != nil {
+			b.logger.Errorf("could not send message id '%d' reason: %v", mo.From, err)
+		}
+
+		// TODO: places preview
+	}
+}
+
+func (b *webhookBot) handleAdminButton(mo *messageObject, pld *payload) handlerFunc {
+	return func(req *request, resp reponse) {
+		if err := b.vkAPIClient.SendMessage(&vkapi.Message{
+			RecieverID: mo.From,
+			Text:       fmt.Sprintf("Администратор и программист в едином лице https://vk.com/versarter"),
+		}); err != nil {
+			b.logger.Errorf("could not send message id '%d' reason: %v", mo.From, err)
+		}
 	}
 }
