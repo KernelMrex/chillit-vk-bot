@@ -2,6 +2,7 @@ package vkbot
 
 import (
 	"chillit-vk-bot/internal/app/places"
+	"chillit-vk-bot/internal/app/templates"
 	"chillit-vk-bot/internal/app/vkapi"
 	"chillit-vk-bot/internal/app/vkdialogs"
 	"fmt"
@@ -9,7 +10,7 @@ import (
 )
 
 // Start starts vk bot
-func Start(config *Config, placesStore places.PlacesStoreClient) error {
+func Start(config *Config, placesStore places.PlacesStoreClient, templatesStorage *templates.Storage) error {
 	if config == nil {
 		return fmt.Errorf("bot config is nil")
 	}
@@ -25,6 +26,7 @@ func Start(config *Config, placesStore places.PlacesStoreClient) error {
 		vkapi.NewClient(config.Token),
 		placesStore,
 		dialogs,
+		templatesStorage,
 	)
 
 	return http.ListenAndServe(config.Host, bot)

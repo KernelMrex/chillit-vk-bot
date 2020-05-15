@@ -12,6 +12,7 @@ type Message struct {
 	RecieverID int
 	RandomID   int64
 	Text       string
+	Template   string
 	Keyboard   *Keyboard
 }
 
