@@ -7,3 +7,7 @@ vk_bot:
 
 store_service:
   url: "localhost:10050"
+
+templates:
+  path: "./message_templates"
+  extension: ".tmpl"

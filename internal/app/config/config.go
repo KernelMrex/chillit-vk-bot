@@ -2,6 +2,7 @@ package config
 
 import (
 	"chillit-vk-bot/internal/app/places"
+	"chillit-vk-bot/internal/app/templates"
 	"chillit-vk-bot/internal/app/vkbot"
 	"errors"
 	"fmt"
@@ -13,8 +14,9 @@ import (
 
 // Configuration structure which provides app configuration
 type Configuration struct {
-	VkBot        *vkbot.Config  `yaml:"vk_bot"`
-	StoreService *places.Config `yaml:"store_service"`
+	VkBot        *vkbot.Config     `yaml:"vk_bot"`
+	StoreService *places.Config    `yaml:"store_service"`
+	Templates    *templates.Config `yaml:"templates"`
 }
 
 // NewConfig parse Configuration from yaml file
